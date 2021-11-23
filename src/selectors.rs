@@ -224,9 +224,9 @@ pub fn print_answer(
 pub fn name_to_id(x: &str) -> &'static str {
     let r = match x {
         "corrections" => "a.gL9Hy",
+        "link_desc" => "div.VwiC3b.yXK7lf.MUxGbd.yDYNvb.lyLwlc.lEBKkf",
         "titles" => "h3.LC20lb.DKV0Md",
         "urls" => "div.yuRUbf",
-        "link_desc" => "div.VwiC3b.yXK7lf.MUxGbd.yDYNvb.lyLwlc.lEBKkf",
         _ => panic!("name_to_id: no matcing id for this selector")
     };
     r
@@ -251,6 +251,17 @@ pub fn filter(mut answers: Vec<&str>, mut query: String) -> Vec<&str> {
                 }
             }
 
+            "holidays" => {
+                if qv[0] == "holidays"
+                    || qv[0] == "public" && qv[1] == "holidays"
+                    || qv[(n - 1)] == "public" && qv[n] == "holidays"
+                    || qv[n] == "holidays"
+                {
+                    answers = vec!["holidays"];
+                    return answers
+                }
+            }
+
             "lists" => {
                 if qv[0] == "cast" && qv[1] == "of"
                     || qv[0] == "actors" && qv[1] == "in"
@@ -264,33 +275,9 @@ pub fn filter(mut answers: Vec<&str>, mut query: String) -> Vec<&str> {
                 }
             }
 
-            "quotes" => {
-                if qv[0] == "quotes" && qv[1] == "by"
-                    || qv[0] == "quotes" && qv[1] == "from"
-                    || qv[n] == "quotes"
-                {
-                    answers = vec!["quotes"];
-                    return answers
-                }
-            }
-
             "lyrics" => {
                 if qv[0] == "lyrics" || qv[n] == "lyrics" {
                     answers = vec!["lyrics"];
-                    return answers
-                }
-            }
-
-            "weather" => {
-                if qv[0] == "weather" || qv[n] == "weather" {
-                    answers = vec!["weather"];
-                    return answers
-                }
-            }
-
-            "translate" => {
-                if qv[0] == "translate" || qv[0] == "translation" || qv[n] == "translation" {
-                    answers = vec!["translate"];
                     return answers
                 }
             }
@@ -307,13 +294,26 @@ pub fn filter(mut answers: Vec<&str>, mut query: String) -> Vec<&str> {
                 }
             }
 
-            "holidays" => {
-                if qv[0] == "holidays"
-                    || qv[0] == "public" && qv[1] == "holidays"
-                    || qv[(n - 1)] == "public" && qv[n] == "holidays"
-                    || qv[n] == "holidays"
+            "quotes" => {
+                if qv[0] == "quotes" && qv[1] == "by"
+                    || qv[0] == "quotes" && qv[1] == "from"
+                    || qv[n] == "quotes"
                 {
-                    answers = vec!["holidays"];
+                    answers = vec!["quotes"];
+                    return answers
+                }
+            }
+
+            "translate" => {
+                if qv[0] == "translate" || qv[0] == "translation" || qv[n] == "translation" {
+                    answers = vec!["translate"];
+                    return answers
+                }
+            }
+
+            "weather" => {
+                if qv[0] == "weather" || qv[n] == "weather" {
+                    answers = vec!["weather"];
                     return answers
                 }
             }
