@@ -21,7 +21,7 @@ then for convenience copy ```./target/release/oi``` to somewhere in your $PATH
 
 I'll be providing pre compiled binaries for Linux, Windows & macOS in the releases section soon
 
-#### TODO:
+### TODO:
 
 + full docs
 + shell completion scripts
