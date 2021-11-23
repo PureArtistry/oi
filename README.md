@@ -5,7 +5,8 @@ full docs coming soon, use ```oi --help``` for full usage information
 
 ### dependencies
 
-on all platforms the only thing you need installed is cargo
+on all platforms the only thing you need installed is cargo.
+this is only required for building the binary, if you have no more use for cargo you can remove it afterwards
 
 ### build instructions:
 
@@ -18,4 +19,12 @@ run ```cargo build --release```
 then for convenience copy ```./target/release/oi``` to somewhere in your $PATH
 (on linux this would be something like ```/usr/local/bin```, not sure what location to use for other systems)
 
-I'll be providing pre compiled binaries for all platforms in the releases section soon
+I'll be providing pre compiled binaries for Linux, Windows & macOS in the releases section soon
+
+#### TODO:
+
+full docs
+shell completion scripts
+user customisable colours (using an environment variable)
+
++ general code improvements
