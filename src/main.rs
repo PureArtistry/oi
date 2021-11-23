@@ -131,8 +131,7 @@ fn main() {
             match *x == "holidays" {
                 true if data
                     .select(&Selector::parse("div.wDYxhc").unwrap())
-                    .skip(1)
-                    .next()
+                    .nth(1)
                     .unwrap()
                     .value()
                     .attr("data-attrid")

@@ -84,14 +84,7 @@ fn get_cache_path(os_type: &str) -> Result<String> {
 
 fn get_file_list(os_type: &str) -> Result<Vec<String>> {
     let sep = sep_type(os_type);
-    let cache_path = [
-        get_cache_path(os_type)?,
-        sep.to_string(),
-        "oi".to_string(),
-        sep.to_string(),
-        "*.html".to_string()
-    ]
-    .join("");
+    let cache_path = [&get_cache_path(os_type)?, sep, "oi", sep, "*.html"].join("");
 
     let mut files: Vec<String> = vec![];
     for x in glob(&cache_path).unwrap() {
