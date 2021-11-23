@@ -23,8 +23,7 @@ I'll be providing pre compiled binaries for Linux, Windows & macOS in the releas
 
 #### TODO:
 
-full docs
-shell completion scripts
-user customisable colours (using an environment variable)
-
-+ general code improvements
++ full docs
++ shell completion scripts
++ user customisable colours (using an environment variable)
++ general code improvements (and probable bug fixes)
