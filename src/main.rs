@@ -1,119 +1,69 @@
-use clap::{crate_authors, crate_description, crate_version, App, Arg};
-use crossterm::style::{Colorize, Styler};
-use crossterm::tty::IsTty;
-use scraper::{Html, Selector};
-use std::env;
-use std::io::stdout;
-use std::process::exit;
+use std::{io::stdout, process::exit};
 
+use crossterm::{style::Stylize, terminal::size, tty::IsTty};
+use scraper::{Html, Selector};
+use whoami::{lang, platform};
+
+mod cli;
+mod io_functions;
 mod selectors;
-mod stuff;
 
 fn main() {
-    let mut tty = stdout().is_tty();
-    let main_array = selectors::details();
-    let mut selectors = vec![];
-    for i in 0..main_array.len() {
-        selectors.push(main_array[i].0)
+    let details = selectors::details();
+    let mut selector_list = vec![];
+    for x in &details {
+        selector_list.push(x.0)
     }
-    let args = App::new("oi!")
-        .author(crate_authors!())
-        .about("please use --help for more detailed information")
-        .long_about(crate_description!())
-        .version(crate_version!())
-        .help_template("{bin} - {about}\n\nUSAGE:\n    {usage}\n\n{all-args}\n\nversion {version} by {author}\nplease report any bugs to https://gitub.com/PureArtistry/oi/issues")
-        .arg(Arg::new("all")
-            .short('a')
-            .long("all")
-            .display_order(1)
-            .about("Prints all of the answers found"))
-        .arg(Arg::new("urls")
-            .short('u')
-            .long("urls")
-            .display_order(2)
-            .about("Also print a list of the top urls associated with your query")
-            .long_about(
-"Also print a list of the top urls associated with your query
-these are typically only shown when an answer can't be found"))
-        .arg(Arg::new("quiet")
-            .short('q')
-            .long("quiet")
-            .display_order(3)
-            .about("Only print the answer (if applicable) and error messages")
-            .long_about(
-"Only print the answer (if applicable) and error messages
-silences corrections, unrequested urls and selector information"))
-        .arg(Arg::new("raw")
-            .short('r')
-            .long("raw")
-            .display_order(4)
-            .about("Raw output (use --help for details)")
-            .long_about(
-"Raw output - no colours, terminal attributes and messages
-this is only required if you don't want to use colours etc in your terminal
-if you are piping the output somewhere else this flag is passed automatically"))
-        .arg(Arg::new("save")
-            .short('s')
-            .long("save")
-            .display_order(5)
-            .conflicts_with("cache")
-            .about("Saves the raw HTML for this query (linux only atm, sorry!)")
-            .long_about(
-"Saves the raw HTML for this query to the following path:
-$HOME/.cache/oi/[date]-[query].html
-As you might be able to infer from the path, this flag is only for linux right now
-I plan to update this to also use the correct path on Windows and macOS soon"))
-        .arg(Arg::new("cache")
-            .short('c')
-            .long("cache")
-            .display_order(6)
-            .conflicts_with("language")
-            .about("Use the most recent cached HTML"))
-        .arg(Arg::new("list")
-            .short('L')
-            .long("list")
-            .exclusive(true)
-            .display_order(7)
-            .about("Prints a table of all the valid answer selectors")
-            .long_about(
-"Prints a table of all the valid answer selectors
-includes descriptions and examples (for use with the -p --pick option)"))
-        .arg(Arg::new("language")
-            .short('l')
-            .long("lang")
-            .takes_value(true)
-            .display_order(8)
-            .conflicts_with("cache")
-            .about("Specify the language to use (eg: en_GB)")
-            .long_about(
-"Specify the language to use (eg: en_GB)
-oi uses your system language by default
-if that can't be resolved then it will default to en_US"))
-        .arg(Arg::new("selectors")
-            .short('p')
-            .long("pick")
-            .takes_value(true)
-            .multiple(true)
-            .value_terminator("--")
-            .possible_values(&selectors)
-            .hide_possible_values(true)
-            .display_order(9)
-            .about("Target specific answers, use -- to stop parsing arguments")
-            .long_about(
-"Target specific answers, use -- to stop parsing arguments
-eg: oi -p simple_values basic_answers -- my search query"))
-        .arg(Arg::new("query")
-            .conflicts_with("cache")
-            .conflicts_with("list")
-            .about("Whaddya wanna know?")
-            .required_unless_present("cache")
-            .required_unless_present("list")
-            .multiple(true))
-        .get_matches();
+    let args = cli::build(&selector_list).get_matches();
 
     if args.is_present("list") {
-        selectors::print_list(main_array)
+        selectors::print_list(details)
+        // application will exit(0) here!
     }
+
+    let os_type = platform().to_string();
+    if args.is_present("clean") {
+        match io_functions::clean_cache(&os_type) {
+            Ok(r) => {
+                println!(
+                    "{} The directory {} and it's contents have been removed!",
+                    "success:".green().bold(),
+                    r.blue()
+                );
+                exit(0)
+            }
+            Err(e) => {
+                eprintln!("{} {}", "error:".red().bold(), e);
+                exit(1)
+            }
+        }
+    }
+
+    let use_cache = args.is_present("cache");
+    let query: Vec<&str> = match use_cache {
+        true => vec![],
+        false => args.values_of("query").unwrap().collect()
+    };
+
+    if query.len() == 1 && query[0] == "-" {
+        println!(
+            "{} The following required arguments were not provided:\n    {}\n\nUSAGE:\n    oi \
+             <query>...\n\nFor more information try {}",
+            "error:".red().bold(),
+            "<query>...".green(),
+            "--help".green()
+        );
+        exit(1)
+    }
+
+    let mut tty = stdout().is_tty();
+    let tty_size = size().unwrap_or((0, 0));
+    let w: usize = match tty_size.0 {
+        0 if tty => panic!("main: can't determine terminal size"),
+        0 => 0,
+        1..=100 => tty_size.0.into(),
+        _ => 100
+    };
 
     if args.is_present("raw") {
         tty = false;
@@ -121,124 +71,158 @@ eg: oi -p simple_values basic_answers -- my search query"))
 
     let quiet = match tty {
         true => args.is_present("quiet"),
-        false => true,
+        false => true
     };
-
-    let use_cache = args.is_present("cache");
-
-    let query: Vec<&str> = match use_cache {
-        true => vec![],
-        false => args.values_of("query").unwrap().collect(),
-    };
-    if query.len() == 1 {
-        if query[0] == "-" {
-            println!(
-                "{} The following required arguments were not provided:
-    {}
-
-USAGE:
-    oi <query>...
-
-For more information try {}",
-                "error:".dark_red().bold(),
-                "<query>...".dark_green(),
-                "--help".dark_green()
-            );
-            exit(1)
-        }
-    }
-
-    let os_lang = env::var("LANG").unwrap_or("en_US".to_string());
-    let lang_split: Vec<&str> = os_lang.split('.').collect();
-    let lang = args.value_of("language").unwrap_or(lang_split[0]);
 
     let html = match use_cache {
-        true => stuff::cached_html(&tty),
-        false => match stuff::fetch(query.join(" ").to_string(), lang) {
-            Ok(x) => x,
-            Err(_) => {
-                match tty {
-                    true => eprintln!(
-                        "{} No response from google, sorry!",
-                        "error:".dark_red().bold()
-                    ),
-                    false => eprintln!("error: No response from google, sorry!"),
-                };
+        true => match io_functions::cached_html(&os_type) {
+            Ok(r) => r,
+            Err(e) => {
+                eprintln!("{} {}", "error:".red().bold(), e);
                 exit(1)
             }
         },
+        false => {
+            let lang = match args.is_present("language") {
+                true => args.value_of("language").unwrap().to_string(),
+                false => lang().next().unwrap_or_else(|| "en-US".to_string())
+            };
+            match io_functions::fetch(query.join(" "), lang) {
+                Ok(r) => r,
+                Err(_) => {
+                    eprintln!("{} No response from google, sorry!", "error:".red().bold());
+                    exit(1)
+                }
+            }
+        }
     };
 
     if args.is_present("save") {
-        stuff::save_html(&query, &html, &tty)
-    }
-
-    if args.is_present("selectors") {
-        selectors = args.values_of("selectors").unwrap().collect()
-    }
-
-    if quiet == false {
-        selectors.push("corrections")
-    }
-
-    let data = Html::parse_document(&html);
-    let mut answers = vec![];
-    for i in 0..selectors.len() {
-        if data
-            .select(&Selector::parse(selectors::name_to_id(selectors[i])).unwrap())
-            .next()
-            .is_some()
-        {
-            answers.push(selectors[i])
+        match io_functions::save_html(&query, &html, &os_type) {
+            Ok(r) => match tty {
+                true => println!(
+                    "{}\n    {}\n",
+                    "HTML for the query has been saved to the following path:".dark_grey(),
+                    r.blue()
+                ),
+                false => {}
+            },
+            Err(e) => eprintln!("{} {}\n", "error:".red().bold(), e)
         }
     }
 
-    match answers.len() {
-        0 => no_result(tty, &data, quiet),
-        1 => {
-            if &answers[0] == &"corrections" {
-                no_result(tty, &data, quiet)
+    let mut selectors = match args.is_present("selectors") {
+        true => args.values_of("selectors").unwrap().collect(),
+        false => selector_list.clone()
+    };
+    selectors.push("corrections");
+
+    let data = Html::parse_document(&html);
+    let mut answers = vec![];
+    for x in &selectors {
+        let y = match *x {
+            "corrections" => selectors::name_to_id("corrections"),
+            _ => {
+                let p = selector_list.iter().position(|&r| r == *x).unwrap();
+                details[p].3
             }
+        };
+        if data.select(&Selector::parse(y).unwrap()).next().is_some() {
+            match *x == "holidays" {
+                true if data
+                    .select(&Selector::parse("div.wDYxhc").unwrap())
+                    .skip(1)
+                    .next()
+                    .unwrap()
+                    .value()
+                    .attr("data-attrid")
+                    .unwrap()
+                    == "kc:/public_events:holidays_for_date" =>
+                {
+                    answers.push(*x)
+                }
+                true => {}
+                false => answers.push(*x)
+            }
+        }
+    }
+
+    let total = answers.len();
+    match total {
+        0 => {
+            no_result(tty, w, data, quiet, false);
+            exit(1)
+        }
+        1 if answers[0] == "corrections" => {
+            no_result(tty, w, data, quiet, true);
+            exit(1)
         }
         _ => {}
     }
 
-    if &answers[(answers.len() - 1)] == &"corrections" {
-        corrections(&data);
+    let mut corrected = false;
+    if answers[(total - 1)] == "corrections" {
+        corrected = true;
+        if !quiet {
+            corrections(&data)
+        }
         answers.pop();
     }
 
-    let total = answers.clone();
-    match args.is_present("all") {
-        true => selectors::print_answer(&data, answers, &tty, &quiet, total),
-        false => {
-            if answers.len() > 1 {
-                answers = selectors::filter(answers)
+    let matches = answers.clone();
+    if !args.is_present("all") && total > 1 {
+        let r_query = match corrected {
+            true => data
+                .select(&Selector::parse(selectors::name_to_id("corrections")).unwrap())
+                .next()
+                .unwrap()
+                .text()
+                .collect::<Vec<&str>>()
+                .join(""),
+            false => match use_cache {
+                true => {
+                    let x = data
+                        .select(&Selector::parse("title").unwrap())
+                        .next()
+                        .unwrap()
+                        .text()
+                        .collect::<Vec<&str>>()
+                        .join("");
+                    let mut y = x.split(' ').collect::<Vec<&str>>();
+                    for _ in 0..3 {
+                        y.pop();
+                    }
+                    y.join(" ")
+                }
+                false => query.join(" ")
             }
-            selectors::print_answer(&data, answers, &tty, &quiet, total)
-        }
+        };
+        answers = selectors::filter(answers, r_query)
     }
+    selectors::print_answer(&data, answers, &tty, w, &quiet, matches);
 
     if args.is_present("urls") {
-        print_urls(&data)
+        print_urls(w, data)
     }
 }
 
-fn no_result(tty: bool, data: &scraper::Html, quiet: bool) {
+fn no_result(tty: bool, w: usize, data: scraper::Html, quiet: bool, corrected: bool) {
     match tty {
         true => match quiet {
-            true => println!("{} Sorry about that!", "No result:".dark_red().bold()),
+            true => println!("{} Sorry about that!", "No result:".red().bold()),
             false => {
+                if corrected {
+                    corrections(&data)
+                }
                 println!(
                     "{} Perhaps one of these links might help?",
-                    "No result:".bold().dark_red()
+                    "No result:".bold().red()
                 );
-                print_urls(data)
+                print_urls(w, data)
             }
         },
-        false => eprintln!("No result!"),
+        false => eprintln!("No result!")
     }
-    exit(1)
 }
 
 fn corrections(data: &scraper::Html) {
@@ -246,35 +230,33 @@ fn corrections(data: &scraper::Html) {
         .select(&Selector::parse(selectors::name_to_id("corrections")).unwrap())
         .next()
         .unwrap();
-    let y1 = x.inner_html();
-    let y: Vec<&str> = y1.split(" ").collect();
-    let j = y.len();
-    let z1: Vec<&str> = x.text().collect();
-    let z2 = z1.join("");
-    let z: Vec<&str> = z2.split(" ").collect();
+    let foo = x.inner_html();
+    let bar = x.text().collect::<Vec<&str>>().join("");
 
-    if j != z.len() {
-        panic!()
-    }
+    let html = foo.split(' ').collect::<Vec<&str>>();
+    let text = bar.split(' ').collect::<Vec<&str>>();
+    let total = html.len();
 
-    print!("{}", "I'll assume you meant this: ".grey());
-    for i in 0..j {
-        if y[i] == z[i] {
-            print!("{} ", z[i])
-        } else {
-            print!("{} ", z[i].bold().dark_cyan())
+    assert_eq!(total, text.len());
+
+    print!("{}", "I'll assume you meant this: ".dark_grey());
+    for i in 0..total {
+        match html[i] == text[i] {
+            true => print!("{} ", text[i]),
+            false => print!("{} ", text[i].bold().cyan())
         }
     }
-    print!("\n")
+    println!()
 }
 
-fn print_urls(data: &scraper::Html) {
+fn print_urls(w: usize, data: scraper::Html) {
     let mut titles: Vec<&str> = vec![];
-    let mut urls: Vec<&str> = vec![];
-    for x in data.select(&Selector::parse("h3.LC20lb.DKV0Md").unwrap()) {
+    for x in data.select(&Selector::parse(selectors::name_to_id("titles")).unwrap()) {
         titles.push(x.text().next().unwrap())
     }
-    for x in data.select(&Selector::parse("div.yuRUbf").unwrap()) {
+
+    let mut urls: Vec<&str> = vec![];
+    for x in data.select(&Selector::parse(selectors::name_to_id("urls")).unwrap()) {
         urls.push(
             x.first_child()
                 .unwrap()
@@ -282,20 +264,70 @@ fn print_urls(data: &scraper::Html) {
                 .as_element()
                 .unwrap()
                 .attr("href")
-                .unwrap(),
+                .unwrap()
         )
     }
-    let j = titles.len();
-    if urls.len() != j {
-        panic!()
-    } else if j == 0 {
-        println!("{}", "jk, there are no links!".grey());
-        exit(0)
+
+    let mut desc = vec![];
+    for x in data.select(&Selector::parse(selectors::name_to_id("link_desc")).unwrap()) {
+        desc.push(x.text().collect::<Vec<&str>>())
     }
-    for i in 0..j {
-        print!("\n");
-        println!("{}", titles[i].bold().dark_blue());
-        println!("{}", urls[i]);
+
+    let total = titles.len();
+    let desc_total = desc.len();
+
+    match total {
+        0 => {
+            println!("{}", "jk, there are no links!".dark_grey());
+            exit(0)
+        }
+        _ if total != urls.len() => panic!("print_urls: total of titles != urls"),
+        _ if total != desc_total => match desc_total < total {
+            true => {
+                for _ in 0..(total - desc_total) {
+                    println!(
+                        "\n{}\n{}\n{}",
+                        titles[0].bold().blue(),
+                        urls[0],
+                        "No description available, sorry!".dark_grey()
+                    );
+                    titles.remove(0);
+                    urls.remove(0);
+                }
+            }
+            false => panic!("print_urls: more descriptions than titles/urls")
+        },
+        _ => {}
+    }
+
+    for i in 0..titles.len() {
+        println!(
+            "\n{}\n{}\n{}",
+            titles[i].bold().blue(),
+            urls[i],
+            format_desc(w, desc[i].join("").to_string()).dark_grey()
+        );
     }
     exit(0)
+}
+
+fn format_desc(length_max: usize, desc: String) -> String {
+    let mut length = 0;
+    let mut desc_build = vec![];
+    let mut r: Vec<String> = vec![];
+
+    let desc_words: Vec<&str> = desc.split(' ').collect();
+    for x in &desc_words {
+        match (x.len() + length) >= length_max {
+            true => {
+                r.push(desc_build.join(" "));
+                desc_build.clear();
+                length = x.len() + 1
+            }
+            false => length += x.len() + 1
+        }
+        desc_build.push(*x)
+    }
+    r.push(desc_build.join(" "));
+    r.join("\n")
 }

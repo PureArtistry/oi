@@ -1,17 +1,19 @@
 [package]
 name = "oi"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["David Sherriff <d.sherriff.81@gmail.com>"]
-edition = "2018"
+edition = "2021"
 description = "trivia on the command line."
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-clap = { version = "3.0.0-beta.2", features = ["wrap_help"] }
-crossterm = "^0.19"
-ureq = { version = "2.1", features = ["charset"] }
-scraper = "0.12.0"
-chrono = "0.4"
-comfy-table = "2.1.0"
-glob = "0.3.0"
+anyhow = "~1.0"
+chrono = "~0.4"
+clap = { version = "3.0.0-beta.5", features = ["wrap_help"] }
+comfy-table = "~5.0"
+crossterm = "~0.22"
+glob = "~0.3.0"
+scraper = "~0.12"
+ureq = { version = "~2.3", features = ["charset"] }
+whoami = "~1.2"
