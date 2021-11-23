@@ -7,8 +7,8 @@ full docs coming soon, use ```oi --help``` for full usage information
 
 on all platforms the only thing you need installed is cargo.
 
-Windows: https://win.rustup.rs/
-Linux/macOS: ```curl https://sh.rustup.rs -sSf | sh``` (or use your distro's package manager)
++ Windows: https://win.rustup.rs/
++ Linux/macOS: ```curl https://sh.rustup.rs -sSf | sh``` (or use your distro's package manager)
 
 this is only required for building the binary, if you have no more use for cargo you can remove it afterwards
 
