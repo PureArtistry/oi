@@ -251,7 +251,7 @@ pub fn filter(mut answers: Vec<&str>, mut query: String) -> Vec<&str> {
                 }
             }
 
-            "main_lists" => {
+            "lists" => {
                 if qv[0] == "cast" && qv[1] == "of"
                     || qv[0] == "actors" && qv[1] == "in"
                     || qv[n] == "cast"
