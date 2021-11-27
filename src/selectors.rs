@@ -343,7 +343,7 @@ fn default_output(s: &str, w: usize) {
     t.load_preset(UTF8_BORDERS_ONLY);
     t.apply_modifier(UTF8_ROUND_CORNERS);
     t.set_content_arrangement(ContentArrangement::Dynamic);
-    if w > 100 {
+    if w >= 100 {
         t.set_table_width(100);
     }
     t.add_row(Row::from(vec![Cell::new(s)

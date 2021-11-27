@@ -18,7 +18,7 @@ pub fn main(data: &scraper::Html, tty: &bool, w: usize) {
             t.apply_modifier(UTF8_ROUND_CORNERS);
             t.apply_modifier(UTF8_SOLID_INNER_BORDERS);
             t.set_content_arrangement(ContentArrangement::Dynamic);
-            if w > 100 {
+            if w >= 100 {
                 t.set_table_width(100);
             }
             for x in &y {
