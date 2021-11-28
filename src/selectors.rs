@@ -62,7 +62,8 @@ pub fn details() -> [(&'static str, &'static str, &'static str, &'static str); 1
         ),
         (
             "define",
-            "Dictionary and thesaurus - English only currently\n(also, the formatting can occasionally mess up - working on it, sorry!)",
+            "Dictionary and thesaurus - English only currently\n(also, the formatting can \
+             occasionally mess up - working on it, sorry!)",
             "define free",
             "div.VpH2eb.vmod"
         ),

@@ -144,7 +144,6 @@ fn main() {
             }
         }
     }
-    drop(main_array);
 
     let total = answers.len();
     match total {

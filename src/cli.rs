@@ -116,7 +116,7 @@ pub fn build<'a>(selectors: &'a [&str]) -> App<'a> {
             .about("Target specific answers, use -- to stop parsing arguments")
             .long_about(
                 "Target specific answers, use -- to stop parsing arguments\n\
-                eg: oi -p simple_values basic_answers -- my search query"
+                eg: oi -p basic1 basic2 summary -- my search query"
             )
         )
 
