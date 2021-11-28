@@ -2,28 +2,27 @@ use std::{io::stdout, process::exit};
 
 use crossterm::{style::Stylize, terminal::size, tty::IsTty};
 use scraper::{Html, Selector};
-use whoami::{lang, platform};
+use whoami::lang;
 
 mod cli;
 mod io_functions;
 mod selectors;
 
 fn main() {
-    let details = selectors::details();
+    let main_array = selectors::details();
     let mut selector_list = vec![];
-    for x in &details {
+    for x in &main_array {
         selector_list.push(x.0)
     }
     let args = cli::build(&selector_list).get_matches();
 
     if args.is_present("list") {
-        selectors::print_list(details)
+        selectors::print_list(main_array)
         // application will exit(0) here!
     }
 
-    let os_type = platform().to_string();
     if args.is_present("clean") {
-        match io_functions::clean_cache(&os_type) {
+        match io_functions::clean_cache() {
             Ok(r) => {
                 println!(
                     "{} The directory {} and it's contents have been removed!",
@@ -75,7 +74,7 @@ fn main() {
     };
 
     let html = match use_cache {
-        true => match io_functions::cached_html(&os_type) {
+        true => match io_functions::cached_html() {
             Ok(r) => r,
             Err(e) => {
                 eprintln!("{} {}", "error:".red().bold(), e);
@@ -98,7 +97,7 @@ fn main() {
     };
 
     if args.is_present("save") {
-        match io_functions::save_html(&query, &html, &os_type) {
+        match io_functions::save_html(&query, &html) {
             Ok(r) => match tty {
                 true => println!(
                     "{}\n    {}\n",
@@ -124,7 +123,7 @@ fn main() {
             "corrections" => selectors::name_to_id("corrections"),
             _ => {
                 let p = selector_list.iter().position(|&r| r == *x).unwrap();
-                details[p].3
+                main_array[p].3
             }
         };
         if data.select(&Selector::parse(y).unwrap()).next().is_some() {
@@ -145,6 +144,7 @@ fn main() {
             }
         }
     }
+    drop(main_array);
 
     let total = answers.len();
     match total {
