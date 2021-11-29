@@ -225,9 +225,10 @@ pub fn print_answer(
 pub fn name_to_id(x: &str) -> &'static str {
     let r = match x {
         "corrections" => "a.gL9Hy",
-        "link_desc" => "div.VwiC3b.yXK7lf.MUxGbd.yDYNvb.lyLwlc.lEBKkf",
-        "titles" => "h3.LC20lb.DKV0Md",
-        "urls" => "div.yuRUbf",
+        "url_block" => "div.tF2Cxc",
+        "desc" => "div.VwiC3b.yXK7lf.MUxGbd.yDYNvb.lyLwlc.lEBKkf",
+        "title" => "h3.LC20lb.MBeuO.DKV0Md",
+        "url" => "div.yuRUbf",
         _ => panic!("name_to_id: no matcing id for this selector")
     };
     r

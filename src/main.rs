@@ -128,6 +128,7 @@ fn main() {
         };
         if data.select(&Selector::parse(y).unwrap()).next().is_some() {
             match *x == "holidays" {
+                // can't find a unique id for holidays selector, this is required to prevent false positives
                 true if data
                     .select(&Selector::parse("div.wDYxhc").unwrap())
                     .nth(1)
@@ -248,68 +249,60 @@ fn corrections(data: &scraper::Html) {
 }
 
 fn print_urls(w: usize, data: scraper::Html) {
-    let mut titles: Vec<&str> = vec![];
-    for x in data.select(&Selector::parse(selectors::name_to_id("titles")).unwrap()) {
-        titles.push(x.text().next().unwrap())
-    }
+    match data
+        .select(&Selector::parse(selectors::name_to_id("url_block")).unwrap())
+        .next()
+        .is_some()
+    {
+        true => {
+            for x in data.select(&Selector::parse(selectors::name_to_id("url_block")).unwrap()) {
+                let title = x
+                    .select(&Selector::parse(selectors::name_to_id("title")).unwrap())
+                    .next()
+                    .unwrap()
+                    .text()
+                    .collect::<Vec<&str>>();
 
-    let mut urls: Vec<&str> = vec![];
-    for x in data.select(&Selector::parse(selectors::name_to_id("urls")).unwrap()) {
-        urls.push(
-            x.first_child()
-                .unwrap()
-                .value()
-                .as_element()
-                .unwrap()
-                .attr("href")
-                .unwrap()
-        )
-    }
+                let url = x
+                    .select(&Selector::parse(selectors::name_to_id("url")).unwrap())
+                    .next()
+                    .unwrap()
+                    .first_child()
+                    .unwrap()
+                    .value()
+                    .as_element()
+                    .unwrap()
+                    .attr("href")
+                    .unwrap();
 
-    let mut desc = vec![];
-    for x in data.select(&Selector::parse(selectors::name_to_id("link_desc")).unwrap()) {
-        desc.push(x.text().collect::<Vec<&str>>())
-    }
+                let desc_check = x
+                    .select(&Selector::parse(selectors::name_to_id("desc")).unwrap())
+                    .next();
+                let description: String = match desc_check.is_some() {
+                    true => {
+                        let y = desc_check.unwrap().text().collect::<Vec<&str>>();
+                        y.join("")
+                    }
+                    false => "No description available, sorry!".to_string()
+                };
 
-    let total = titles.len();
-    let desc_total = desc.len();
-
-    match total {
-        0 => {
-            println!("{}", "jk, there are no links!".dark_grey());
-            exit(0)
-        }
-        _ if total != urls.len() => panic!("print_urls: total of titles != urls"),
-        _ if total != desc_total => match desc_total < total {
-            true => {
-                for _ in 0..(total - desc_total) {
-                    println!(
-                        "\n{}\n{}\n{}",
-                        titles[0].bold().blue(),
-                        urls[0],
-                        "No description available, sorry!".dark_grey()
-                    );
-                    titles.remove(0);
-                    urls.remove(0);
-                }
+                println!(
+                    "\n{}\n{}\n{}",
+                    title.join("").bold().blue(),
+                    url,
+                    format_desc(w, description).dark_grey()
+                )
             }
-            false => panic!("print_urls: more descriptions than titles/urls")
-        },
-        _ => {}
-    }
-
-    for i in 0..titles.len() {
-        println!(
-            "\n{}\n{}\n{}",
-            titles[i].bold().blue(),
-            urls[i],
-            format_desc(w, desc[i].join("").to_string()).dark_grey()
-        );
+        }
+        false => println!("{}", "jk, there are no links!".dark_grey())
     }
     exit(0)
 }
 
 fn format_desc(length_max: usize, desc: String) -> String {
+    if desc.len() < length_max {
+        return desc
+    }
     let mut length = 0;
     let mut desc_build = vec![];
     let mut r: Vec<String> = vec![];
