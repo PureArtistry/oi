@@ -6,7 +6,7 @@ pub fn build<'a>(selectors: &'a [&str]) -> App<'a> {
         .about("please use --help for more detailed information")
         .long_about(crate_description!())
         .version(crate_version!())
-        .help_template("{bin}\n{about}\n\nUSAGE:\n    {usage}\n\n{all-args}\n\nversion {version} by {author}\nplease report any bugs to https://gitub.com/PureArtistry/oi/issues")
+        .help_template("{bin}\n{about}\n\n{usage-heading}\n    {usage}\n\n{all-args}\n\nversion {version} by {author}\nplease report any bugs to https://gitub.com/PureArtistry/oi/issues")
 
         .arg(Arg::new("all")
             .short('a')

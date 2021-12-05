@@ -1,13 +1,26 @@
 use crossterm::style::Stylize;
 use scraper::Selector;
 
-use crate::selectors::get_vec;
-
 // this looks like bait for updoots on r/badcode
 
 pub fn tty(data: &scraper::Html, length_max: usize) {
-    let word = get_vec(data, "div.c8d6zd.ya2TWb.DgZBFd");
-    let pronounce = get_vec(data, "div.S23sjd");
+    let define = data
+        .select(&Selector::parse("div.VpH2eb.vmod").unwrap())
+        .next()
+        .unwrap();
+
+    let word = define
+        .select(&Selector::parse("div.c8d6zd.ya2TWb.DgZBFd").unwrap())
+        .next()
+        .unwrap()
+        .text()
+        .collect::<Vec<&str>>();
+    let pronounce = define
+        .select(&Selector::parse("div.S23sjd").unwrap())
+        .next()
+        .unwrap()
+        .text()
+        .collect::<Vec<&str>>();
     println!(
         "{}\t{} {}\n",
         word[0].bold(),
@@ -15,31 +28,23 @@ pub fn tty(data: &scraper::Html, length_max: usize) {
         pronounce[1].magenta().bold()
     );
 
-    let mut classes = vec![];
-    for x in data.select(&Selector::parse("div.lW8rQd").unwrap()) {
-        classes.push(x.text().collect::<Vec<&str>>())
-    }
-
-    let mut definitions = vec![];
-    for x in data.select(&Selector::parse("ol.eQJLDd").unwrap()) {
-        definitions.push(x.text().collect::<Vec<&str>>())
-    }
-
-    let total = classes.len();
-    assert_eq!(total, definitions.len());
-
-    for i in 0..total {
-        classes[i].remove(0);
-
+    for x in define.select(&Selector::parse(r#"div[jsname="r5Nvmf"]"#).unwrap()) {
         let mut dim = true;
-        let mut example = false;
         let mut thesaurus = false;
-        let mut thes_vec: Vec<&str> = vec![];
-        let mut sim_op = 0;
-        let mut sad_noises_intensify = false;
+        let mut thes_vec = vec![];
+        let mut sim_op = 2;
+        let mut example = false;
+        let mut example_vec = vec![];
+        let mut blank_line = true;
 
-        for x in classes[i].iter() {
-            match *x {
+        let classes = x
+            .select(&Selector::parse("div.lW8rQd").unwrap())
+            .next()
+            .unwrap()
+            .text()
+            .collect::<Vec<&str>>();
+        for y in classes.iter().skip(1) {
+            match *y {
                 ": " => {
                     print!("{}", ": ".dark_grey());
                     dim = false
@@ -51,66 +56,54 @@ pub fn tty(data: &scraper::Html, length_max: usize) {
                 "British" => println!("{}", "[British]".dark_grey()),
                 "informal" => println!("{}", "[informal]".dark_grey()),
                 _ => match dim {
-                    true => print!("{}", x.dark_grey()),
-                    false => print!("{}", x.bold().magenta())
+                    true => print!("{}", y.dark_grey()),
+                    false => print!("{}", y.bold().magenta())
                 }
             }
         }
         println!("\n");
 
-        for x in definitions[i].iter() {
-            let num = match x.parse::<u8>() {
+        let definitions = x
+            .select(&Selector::parse("ol.eQJLDd").unwrap())
+            .next()
+            .unwrap()
+            .text()
+            .collect::<Vec<&str>>();
+        for y in &definitions {
+            let num = match y.parse::<u8>() {
                 Ok(n) => {
-                    example = false;
                     if thesaurus {
                         thesaurus = false;
                         if !thes_vec.is_empty() {
-                            print!(
-                                "{}",
+                            println!(
+                                "{}\n",
                                 format_string(length_max, thes_vec.clone(), sim_op, true)
                             );
                             thes_vec.clear()
                         }
                     }
-                    if n > 1 {
-                        println!("\n")
-                    }
-                    print!("{}", x.dark_grey());
+                    print!("{}", y.dark_grey());
                     n
                 }
                 Err(_) => 0
             };
 
             if num == 0 {
-                let chop = match example {
-                    true => (x.len() + 4) > length_max,
-                    false => x.len() > length_max
-                };
+                match *y {
+                    ". " => print!("{}", y.dark_grey()),
 
-                match *x {
-                    " h " => {
-                        match thesaurus {
-                            true => {
-                                if !thes_vec.is_empty() {
-                                    print!(
-                                        "{}",
-                                        format_string(length_max, thes_vec.clone(), sim_op, true)
-                                    );
-                                    thes_vec.clear()
-                                }
-                            }
-                            false => {
-                                thesaurus = true;
-                                example = false;
+                    " h " => match thesaurus {
+                        true => {
+                            if !thes_vec.is_empty() {
+                                println!(
+                                    "{}\n",
+                                    format_string(length_max, thes_vec.clone(), sim_op, true)
+                                );
+                                thes_vec.clear()
                             }
                         }
-                        println!("\n");
-                    }
-
-                    ". " => {
-                        print!("{}", x.dark_grey());
-                        sad_noises_intensify = true
-                    }
+                        false => thesaurus = true
+                    },
 
                     "Similar:" => {
                         print!("{} ", "Similar:".green().bold());
@@ -122,188 +115,224 @@ pub fn tty(data: &scraper::Html, length_max: usize) {
                         sim_op = 1
                     }
 
-                    _ if thesaurus => thes_vec.push(x),
-
-                    _ if sad_noises_intensify => {
-                        match x.as_bytes().iter().any(u8::is_ascii_whitespace) {
-                            true => {
-                                match chop {
-                                    true => print!(
-                                        "\n{}",
-                                        format_string(
-                                            length_max,
-                                            x.split(' ').collect::<Vec<&str>>(),
-                                            0,
-                                            false
-                                        )
-                                        .bold()
-                                    ),
-                                    false => print!("\n{}", x.bold())
-                                }
-                                if x.ends_with('.') {
-                                    example = true;
-                                    print!("\n    ")
-                                }
+                    _ if y.ends_with('.') => {
+                        if thesaurus {
+                            if !thes_vec.is_empty() {
+                                println!(
+                                    "{}\n",
+                                    format_string(length_max, thes_vec.clone(), sim_op, true)
+                                );
+                                thes_vec.clear();
+                                blank_line = true;
                             }
-                            false => println!("{}", ["[", x, "]"].join("").dark_grey())
+                            thesaurus = false
                         }
-                        sad_noises_intensify = false
-                    }
-
-                    _ => match example {
-                        true if chop => print!(
-                            "{}",
-                            format_string(
-                                length_max,
-                                x.split(' ').collect::<Vec<&str>>(),
-                                4,
-                                false
-                            )
-                            .yellow()
-                            .bold()
-                        ),
-                        true => print!("{}", x.yellow().bold()),
-                        false => {
-                            match chop {
-                                true => print!(
-                                    "\n{}",
-                                    format_string(
-                                        length_max,
-                                        x.split(' ').collect::<Vec<&str>>(),
-                                        0,
-                                        false
-                                    )
-                                    .bold()
-                                ),
-                                false => print!("{}", x.bold())
-                            }
-                            if x.ends_with('.') {
-                                example = true;
-                                print!("\n    ")
+                        match blank_line {
+                            true => blank_line = false,
+                            false => {
+                                println!();
+                                blank_line = true;
                             }
                         }
+                        match y.len() > length_max {
+                            true => println!(
+                                "{}",
+                                format_string(
+                                    length_max,
+                                    y.split(' ').collect::<Vec<&str>>(),
+                                    0,
+                                    false
+                                )
+                                .bold()
+                            ),
+                            false => println!("{}", y.bold())
+                        }
                     }
+
+                    _ if y.starts_with('"') && y.ends_with('"') => {
+                        match (y.len() + 4) > length_max {
+                            true => println!(
+                                "    {}\n",
+                                format_string(
+                                    length_max,
+                                    y.split(' ').collect::<Vec<&str>>(),
+                                    4,
+                                    false
+                                )
+                                .yellow()
+                                .bold()
+                            ),
+                            false => println!("    {}\n", y.yellow().bold())
+                        }
+                        blank_line = true
+                    }
+
+                    _ if y.starts_with('"') => {
+                        example = true;
+                        example_vec.push(y.trim());
+                    }
+
+                    _ if y.ends_with('"') => {
+                        example = false;
+                        example_vec.push(y.trim());
+                        println!(
+                            "    {}\n",
+                            format_string(length_max, example_vec.clone(), 4, false)
+                                .yellow()
+                                .bold()
+                        );
+                        example_vec.clear();
+                    }
+
+                    _ if example => example_vec.push(y.trim()),
+                    _ if thesaurus => thes_vec.push(y),
+
+                    _ => {} // TODO: there are some edge cases that could be handled here
                 }
             }
         }
 
         if thesaurus && !thes_vec.is_empty() {
-            print!(
-                "{}",
+            println!(
+                "{}\n",
                 format_string(length_max, thes_vec.clone(), sim_op, true)
             );
-            thes_vec.clear()
+            thes_vec.clear();
         }
-        println!("\n")
     }
 }
 
 pub fn raw(data: &scraper::Html) {
-    let word = get_vec(data, "div.c8d6zd.ya2TWb.DgZBFd");
-    let pronounce = get_vec(data, "div.S23sjd");
+    let define = data
+        .select(&Selector::parse("div.VpH2eb.vmod").unwrap())
+        .next()
+        .unwrap();
+
+    let word = define
+        .select(&Selector::parse("div.c8d6zd.ya2TWb.DgZBFd").unwrap())
+        .next()
+        .unwrap()
+        .text()
+        .collect::<Vec<&str>>();
+    let pronounce = define
+        .select(&Selector::parse("div.S23sjd").unwrap())
+        .next()
+        .unwrap()
+        .text()
+        .collect::<Vec<&str>>();
     println!("{}\tpronounced: {}\n", word[0], pronounce[1]);
 
-    let mut classes = vec![];
-    for x in data.select(&Selector::parse("div.lW8rQd").unwrap()) {
-        classes.push(x.text().collect::<Vec<&str>>())
-    }
-
-    let mut definitions = vec![];
-    for x in data.select(&Selector::parse("ol.eQJLDd").unwrap()) {
-        definitions.push(x.text().collect::<Vec<&str>>())
-    }
-
-    let total = classes.len();
-    assert_eq!(total, definitions.len());
-
-    for i in 0..total {
-        classes[i].remove(0);
-
+    for x in define.select(&Selector::parse(r#"div[jsname="r5Nvmf"]"#).unwrap()) {
         let mut thesaurus = false;
         let mut thes_vec: Vec<&str> = vec![];
-        let mut sad_noises_intensify = false;
+        let mut example = false;
+        let mut example_vec = vec![];
+        let mut blank_line = true;
 
-        for x in classes[i].iter() {
-            match *x {
+        let classes = x
+            .select(&Selector::parse("div.lW8rQd").unwrap())
+            .next()
+            .unwrap()
+            .text()
+            .collect::<Vec<&str>>();
+        for y in classes.iter().skip(1) {
+            match *y {
                 "; " => println!(),
                 "British" => println!("[British]"),
                 "informal" => println!("[informal]"),
-                _ => print!("{}", x)
+                _ => print!("{}", y)
             }
         }
         println!("\n");
 
-        for x in definitions[i].iter() {
-            let num = match x.parse::<u8>() {
+        let definitions = x
+            .select(&Selector::parse("ol.eQJLDd").unwrap())
+            .next()
+            .unwrap()
+            .text()
+            .collect::<Vec<&str>>();
+        for y in &definitions {
+            let num = match y.parse::<u8>() {
                 Ok(n) => {
                     if thesaurus {
                         thesaurus = false;
                         if !thes_vec.is_empty() {
-                            print!("{}", thes_vec.join(", "));
+                            println!("{}\n", thes_vec.join(", "));
                             thes_vec.clear()
                         }
                     }
-                    if n > 1 {
-                        println!("\n")
-                    }
-                    print!("{}", x);
+                    print!("{}", y);
                     n
                 }
                 Err(_) => 0
             };
 
             if num == 0 {
-                match *x {
-                    " h " => {
-                        match thesaurus {
-                            true => {
-                                if !thes_vec.is_empty() {
-                                    print!("{}", thes_vec.join(", "));
-                                    thes_vec.clear()
-                                }
+                match *y {
+                    ". " => print!("{}", y),
+
+                    " h " => match thesaurus {
+                        true => {
+                            if !thes_vec.is_empty() {
+                                println!("{}\n", thes_vec.join(", "));
+                                thes_vec.clear()
                             }
-                            false => thesaurus = true
                         }
-                        println!("\n");
+                        false => thesaurus = true
+                    },
+
+                    "Similar:" | "Opposite:" => {
+                        print!("{} ", y);
                     }
 
-                    ". " => {
-                        print!("{}", x);
-                        sad_noises_intensify = true
-                    }
-
-                    "Similar:" | "Opposite:" => print!("{} ", x),
-
-                    _ if thesaurus => thes_vec.push(x),
-
-                    _ if sad_noises_intensify => {
-                        match x.as_bytes().iter().any(u8::is_ascii_whitespace) {
-                            true => {
-                                print!("\n{}", x);
-                                if x.ends_with('.') {
-                                    println!()
-                                }
+                    _ if y.ends_with('.') => {
+                        if thesaurus {
+                            if !thes_vec.is_empty() {
+                                println!("{}\n", thes_vec.join(", "));
+                                thes_vec.clear();
+                                blank_line = true;
                             }
-                            false => println!("[{}]", x)
+                            thesaurus = false
                         }
-                        sad_noises_intensify = false
+                        match blank_line {
+                            true => blank_line = false,
+                            false => {
+                                println!();
+                                blank_line = true;
+                            }
+                        }
+                        println!("{}", y)
                     }
 
-                    _ => {
-                        print!("{}", x);
-                        if x.ends_with('.') {
-                            println!()
-                        }
+                    _ if y.starts_with('"') && y.ends_with('"') => {
+                        println!("{}\n", y);
+                        blank_line = true
                     }
+
+                    _ if y.starts_with('"') => {
+                        example = true;
+                        example_vec.push(y.trim());
+                    }
+
+                    _ if y.ends_with('"') => {
+                        example = false;
+                        example_vec.push(y.trim());
+                        println!("{}\n", example_vec.join(" "));
+                        example_vec.clear();
+                    }
+
+                    _ if example => example_vec.push(y.trim()),
+                    _ if thesaurus => thes_vec.push(y),
+
+                    _ => {} // TODO: there are some edge cases that could be handled here
                 }
             }
         }
 
         if thesaurus && !thes_vec.is_empty() {
-            print!("{}", thes_vec.join(", "));
-            thes_vec.clear()
+            println!("{}\n", thes_vec.join(", "));
+            thes_vec.clear();
         }
-        println!("\n")
     }
 }
 
