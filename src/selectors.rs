@@ -271,7 +271,7 @@ pub fn filter(mut answers: Vec<&str>, mut query: String) -> Vec<&str> {
                     || qv[n] == "tracklist"
                     || qv[n] == "songs"
                 {
-                    answers = vec!["main_lists"];
+                    answers = vec!["lists"];
                     return answers
                 }
             }

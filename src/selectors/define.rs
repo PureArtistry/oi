@@ -1,4 +1,10 @@
-use crossterm::style::Stylize;
+use std::io::stdout;
+
+use crossterm::{
+    cursor::{position, RestorePosition, SavePosition},
+    execute,
+    style::Stylize
+};
 use scraper::Selector;
 
 // this looks like bait for updoots on r/badcode
@@ -17,51 +23,77 @@ pub fn tty(data: &scraper::Html, length_max: usize) {
         .collect::<Vec<&str>>();
     let pronounce = define
         .select(&Selector::parse("div.S23sjd").unwrap())
-        .next()
-        .unwrap()
-        .text()
-        .collect::<Vec<&str>>();
-    println!(
-        "{}\t{} {}\n",
-        word[0].bold(),
-        "pronounced:".dark_grey(),
-        pronounce[1].magenta().bold()
-    );
+        .next();
+    match pronounce.is_some() {
+        true => {
+            let x = pronounce.unwrap().text().collect::<Vec<&str>>();
+            println!(
+                "{}    {} {}\n",
+                word[0].bold(),
+                "pronounced:".dark_grey(),
+                x[1].magenta().bold()
+            )
+        }
+        false => println!("{}\n", word[0].bold())
+    }
 
     for x in define.select(&Selector::parse(r#"div[jsname="r5Nvmf"]"#).unwrap()) {
         let mut dim = true;
+        let mut pronounced = false;
         let mut thesaurus = false;
         let mut thes_vec = vec![];
         let mut sim_op = 2;
         let mut example = false;
         let mut example_vec = vec![];
-        let mut blank_line = true;
 
-        let classes = x
+        let mut classes = x
             .select(&Selector::parse("div.lW8rQd").unwrap())
             .next()
             .unwrap()
             .text()
             .collect::<Vec<&str>>();
-        for y in classes.iter().skip(1) {
+        let trim_check = classes.len();
+        classes.dedup();
+        if classes.len() == trim_check {
+            classes.remove(0);
+        }
+
+        for y in &classes {
             match *y {
                 ": " => {
                     print!("{}", ": ".dark_grey());
-                    dim = false
+                    dim = false;
                 }
                 "; " => {
                     println!();
-                    dim = true
+                    dim = true;
                 }
-                "British" => println!("{}", "[British]".dark_grey()),
-                "informal" => println!("{}", "[informal]".dark_grey()),
+                "/" => match pronounced {
+                    true => pronounced = false,
+                    false => {
+                        pronounced = true;
+                        println!()
+                    }
+                },
+                "British" => {
+                    println!("{}", "[British]".dark_grey());
+                }
+                "informal" => {
+                    println!("{}", "[informal]".dark_grey());
+                }
+                _ if pronounced => println!("{} {}", "pronounced:".dark_grey(), y.bold().magenta()),
+                _ if y.as_bytes().iter().all(u8::is_ascii_whitespace) => {}
                 _ => match dim {
                     true => print!("{}", y.dark_grey()),
                     false => print!("{}", y.bold().magenta())
                 }
             }
         }
-        println!("\n");
+        let cur_pos = position().unwrap();
+        if cur_pos.0 > 0 {
+            println!()
+        }
+        println!();
 
         let definitions = x
             .select(&Selector::parse("ol.eQJLDd").unwrap())
@@ -90,8 +122,7 @@ pub fn tty(data: &scraper::Html, length_max: usize) {
 
             if num == 0 {
                 match *y {
-                    ". " => print!("{}", y.dark_grey()),
-
+                    ". " => println!("{}", y.dark_grey()),
                     " h " => match thesaurus {
                         true => {
                             if !thes_vec.is_empty() {
@@ -104,17 +135,14 @@ pub fn tty(data: &scraper::Html, length_max: usize) {
                         }
                         false => thesaurus = true
                     },
-
                     "Similar:" => {
                         print!("{} ", "Similar:".green().bold());
                         sim_op = 0
                     }
-
                     "Opposite:" => {
                         print!("{} ", "Opposite:".red().bold());
                         sim_op = 1
                     }
-
                     _ if y.ends_with('.') => {
                         if thesaurus {
                             if !thes_vec.is_empty() {
@@ -122,17 +150,9 @@ pub fn tty(data: &scraper::Html, length_max: usize) {
                                     "{}\n",
                                     format_string(length_max, thes_vec.clone(), sim_op, true)
                                 );
-                                thes_vec.clear();
-                                blank_line = true;
+                                thes_vec.clear()
                             }
                             thesaurus = false
-                        }
-                        match blank_line {
-                            true => blank_line = false,
-                            false => {
-                                println!();
-                                blank_line = true;
-                            }
                         }
                         match y.len() > length_max {
                             true => println!(
@@ -147,9 +167,11 @@ pub fn tty(data: &scraper::Html, length_max: usize) {
                             ),
                             false => println!("{}", y.bold())
                         }
+                        execute!(stdout(), SavePosition).unwrap();
+                        println!()
                     }
-
                     _ if y.starts_with('"') && y.ends_with('"') => {
+                        execute!(stdout(), RestorePosition).unwrap();
                         match (y.len() + 4) > length_max {
                             true => println!(
                                 "    {}\n",
@@ -164,15 +186,13 @@ pub fn tty(data: &scraper::Html, length_max: usize) {
                             ),
                             false => println!("    {}\n", y.yellow().bold())
                         }
-                        blank_line = true
                     }
-
                     _ if y.starts_with('"') => {
                         example = true;
                         example_vec.push(y.trim());
                     }
-
                     _ if y.ends_with('"') => {
+                        execute!(stdout(), RestorePosition).unwrap();
                         example = false;
                         example_vec.push(y.trim());
                         println!(
@@ -183,10 +203,12 @@ pub fn tty(data: &scraper::Html, length_max: usize) {
                         );
                         example_vec.clear();
                     }
-
                     _ if example => example_vec.push(y.trim()),
-                    _ if thesaurus => thes_vec.push(y),
-
+                    _ if thesaurus => {
+                        if !y.as_bytes().iter().all(u8::is_ascii_whitespace) {
+                            thes_vec.push(y)
+                        }
+                    }
                     _ => {} // TODO: there are some edge cases that could be handled here
                 }
             }
@@ -216,30 +238,48 @@ pub fn raw(data: &scraper::Html) {
         .collect::<Vec<&str>>();
     let pronounce = define
         .select(&Selector::parse("div.S23sjd").unwrap())
-        .next()
-        .unwrap()
-        .text()
-        .collect::<Vec<&str>>();
-    println!("{}\tpronounced: {}\n", word[0], pronounce[1]);
+        .next();
+    match pronounce.is_some() {
+        true => {
+            let x = pronounce.unwrap().text().collect::<Vec<&str>>();
+            println!("{}    pronounced: {}\n", word[0], x[1])
+        }
+        false => println!("{}\n", word[0])
+    }
 
     for x in define.select(&Selector::parse(r#"div[jsname="r5Nvmf"]"#).unwrap()) {
+        let mut pronounced = false;
         let mut thesaurus = false;
         let mut thes_vec: Vec<&str> = vec![];
         let mut example = false;
         let mut example_vec = vec![];
-        let mut blank_line = true;
 
-        let classes = x
+        let mut classes = x
             .select(&Selector::parse("div.lW8rQd").unwrap())
             .next()
             .unwrap()
             .text()
             .collect::<Vec<&str>>();
-        for y in classes.iter().skip(1) {
+        let trim_check = classes.len();
+        classes.dedup();
+        if classes.len() == trim_check {
+            classes.remove(0);
+        }
+
+        for y in &classes {
             match *y {
                 "; " => println!(),
+                "/" => match pronounced {
+                    true => pronounced = false,
+                    false => {
+                        pronounced = true;
+                        println!()
+                    }
+                },
                 "British" => println!("[British]"),
                 "informal" => println!("[informal]"),
+                _ if pronounced => println!("pronounced: {}", y),
+                _ if y.as_bytes().iter().all(u8::is_ascii_whitespace) => {}
                 _ => print!("{}", y)
             }
         }
@@ -270,7 +310,6 @@ pub fn raw(data: &scraper::Html) {
             if num == 0 {
                 match *y {
                     ". " => print!("{}", y),
-
                     " h " => match thesaurus {
                         true => {
                             if !thes_vec.is_empty() {
@@ -280,50 +319,34 @@ pub fn raw(data: &scraper::Html) {
                         }
                         false => thesaurus = true
                     },
-
-                    "Similar:" | "Opposite:" => {
-                        print!("{} ", y);
-                    }
-
+                    "Similar:" | "Opposite:" => print!("{} ", y),
                     _ if y.ends_with('.') => {
                         if thesaurus {
                             if !thes_vec.is_empty() {
                                 println!("{}\n", thes_vec.join(", "));
                                 thes_vec.clear();
-                                blank_line = true;
                             }
                             thesaurus = false
                         }
-                        match blank_line {
-                            true => blank_line = false,
-                            false => {
-                                println!();
-                                blank_line = true;
-                            }
-                        }
                         println!("{}", y)
                     }
-
-                    _ if y.starts_with('"') && y.ends_with('"') => {
-                        println!("{}\n", y);
-                        blank_line = true
-                    }
-
+                    _ if y.starts_with('"') && y.ends_with('"') => println!("{}\n", y),
                     _ if y.starts_with('"') => {
                         example = true;
                         example_vec.push(y.trim());
                     }
-
                     _ if y.ends_with('"') => {
                         example = false;
                         example_vec.push(y.trim());
                         println!("{}\n", example_vec.join(" "));
                         example_vec.clear();
                     }
-
                     _ if example => example_vec.push(y.trim()),
-                    _ if thesaurus => thes_vec.push(y),
-
+                    _ if thesaurus => {
+                        if !y.as_bytes().iter().all(u8::is_ascii_whitespace) {
+                            thes_vec.push(y)
+                        }
+                    }
                     _ => {} // TODO: there are some edge cases that could be handled here
                 }
             }
