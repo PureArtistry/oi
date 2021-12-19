@@ -1,7 +1,7 @@
 use std::io::stdout;
 
 use crossterm::{
-    cursor::{position, RestorePosition, SavePosition},
+    cursor::{position, MoveToPreviousLine},
     execute,
     style::Stylize
 };
@@ -45,6 +45,7 @@ pub fn tty(data: &scraper::Html, length_max: usize) {
         let mut sim_op = 2;
         let mut example = false;
         let mut example_vec = vec![];
+        let mut another_thing = 0;
 
         let mut classes = x
             .select(&Selector::parse("div.lW8rQd").unwrap())
@@ -55,7 +56,7 @@ pub fn tty(data: &scraper::Html, length_max: usize) {
         let trim_check = classes.len();
         classes.dedup();
         if classes.len() == trim_check {
-            classes.remove(0);
+            another_thing += 1
         }
 
         for y in &classes {
@@ -75,17 +76,24 @@ pub fn tty(data: &scraper::Html, length_max: usize) {
                         println!()
                     }
                 },
-                "British" => {
-                    println!("{}", "[British]".dark_grey());
-                }
-                "informal" => {
-                    println!("{}", "[informal]".dark_grey());
+                _ if another_thing == 1 => another_thing += 1,
+                _ if another_thing == 2 => {
+                    println!(
+                        "{} {} {}",
+                        "[".bold().dark_grey(),
+                        y.bold().dark_grey(),
+                        "]".bold().dark_grey()
+                    );
+                    another_thing = 0
                 }
                 _ if pronounced => println!("{} {}", "pronounced:".dark_grey(), y.bold().magenta()),
                 _ if y.as_bytes().iter().all(u8::is_ascii_whitespace) => {}
                 _ => match dim {
                     true => print!("{}", y.dark_grey()),
-                    false => print!("{}", y.bold().magenta())
+                    false => {
+                        print!("{}", y.bold().magenta());
+                        dim = true
+                    }
                 }
             }
         }
@@ -167,11 +175,10 @@ pub fn tty(data: &scraper::Html, length_max: usize) {
                             ),
                             false => println!("{}", y.bold())
                         }
-                        execute!(stdout(), SavePosition).unwrap();
                         println!()
                     }
                     _ if y.starts_with('"') && y.ends_with('"') => {
-                        execute!(stdout(), RestorePosition).unwrap();
+                        execute!(stdout(), MoveToPreviousLine(1)).unwrap();
                         match (y.len() + 4) > length_max {
                             true => println!(
                                 "    {}\n",
@@ -192,7 +199,7 @@ pub fn tty(data: &scraper::Html, length_max: usize) {
                         example_vec.push(y.trim());
                     }
                     _ if y.ends_with('"') => {
-                        execute!(stdout(), RestorePosition).unwrap();
+                        execute!(stdout(), MoveToPreviousLine(1)).unwrap();
                         example = false;
                         example_vec.push(y.trim());
                         println!(
@@ -253,6 +260,7 @@ pub fn raw(data: &scraper::Html) {
         let mut thes_vec: Vec<&str> = vec![];
         let mut example = false;
         let mut example_vec = vec![];
+        let mut another_thing = 0;
 
         let mut classes = x
             .select(&Selector::parse("div.lW8rQd").unwrap())
@@ -263,7 +271,7 @@ pub fn raw(data: &scraper::Html) {
         let trim_check = classes.len();
         classes.dedup();
         if classes.len() == trim_check {
-            classes.remove(0);
+            another_thing += 1
         }
 
         for y in &classes {
@@ -276,8 +284,11 @@ pub fn raw(data: &scraper::Html) {
                         println!()
                     }
                 },
-                "British" => println!("[British]"),
-                "informal" => println!("[informal]"),
+                _ if another_thing == 1 => another_thing += 1,
+                _ if another_thing == 2 => {
+                    println!("[ {} ]", y);
+                    another_thing = 0
+                }
                 _ if pronounced => println!("pronounced: {}", y),
                 _ if y.as_bytes().iter().all(u8::is_ascii_whitespace) => {}
                 _ => print!("{}", y)

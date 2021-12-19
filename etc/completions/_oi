@@ -1,0 +1,51 @@
+#compdef oi
+
+autoload -U is-at-least
+
+_oi() {
+    typeset -A opt_args
+    typeset -a _arguments_options
+    local ret=1
+
+    if is-at-least 5.2; then
+        _arguments_options=(-s -S -C)
+    else
+        _arguments_options=(-s -C)
+    fi
+
+    local context curcontext="$curcontext" state line
+    _arguments "${_arguments_options[@]}" \
+'(-c --cache)-l+[Specify the language to use (eg: en-GB)]: :( )' \
+'(-c --cache)--lang=[Specify the language to use (eg: en-GB)]: :( )' \
+'-p+[Target specific answers, use -- to stop parsing arguments]: :(basic1 basic2 clock conversions currency define holidays lists lyrics maths pronounce snippets1 snippets2 sports summary translate weather)' \
+'--pick=[Target specific answers, use -- to stop parsing arguments]: :(basic1 basic2 clock conversions currency define holidays lists lyrics maths pronounce snippets1 snippets2 sports summary translate weather)' \
+'-h[Print help information]' \
+'--help[Print help information]' \
+'-V[Print version information]' \
+'--version[Print version information]' \
+'-a[Prints all of the answers found]' \
+'--all[Prints all of the answers found]' \
+'-u[Also print a list of the top urls associated with your query]' \
+'--urls[Also print a list of the top urls associated with your query]' \
+'-q[Only print the answer (if applicable) and error messages]' \
+'--quiet[Only print the answer (if applicable) and error messages]' \
+'-r[Raw output (use --help for details)]' \
+'--raw[Raw output (use --help for details)]' \
+'(-c --cache)-s[Saves the raw HTML for this query]' \
+'(-c --cache)--save[Saves the raw HTML for this query]' \
+'(-l --lang)-c[Use the most recent cached HTML]' \
+'(-l --lang)--cache[Use the most recent cached HTML]' \
+'--clean[Remove all previously saved results]' \
+'-L[Prints a table of all the valid answer selectors]' \
+'--list[Prints a table of all the valid answer selectors]' \
+'*::query -- Whaddya wanna know?:( )' \
+&& ret=0
+}
+
+(( $+functions[_oi_commands] )) ||
+_oi_commands() {
+    local commands; commands=()
+    _describe -t commands 'oi commands' commands "$@"
+}
+
+_oi "$@"
