@@ -30,14 +30,14 @@ cd into repo root
 an install script has been provided, just run ```./install.sh```
 
 #### macOS
-run ```cargo build --release --frozen```
+run ```cargo build --release```
 
 then ```sudo cp ./target/release/oi /usr/local/bin```
 
 a zsh completion script is located at the following path ```./etc/completions/_oi``` but I currently have no idea where to put it (sorry!)
 
 #### Windows
-run ```cargo build --release --frozen```
+run ```cargo build --release```
 
 then make a new folder in a location of your choosing
 
