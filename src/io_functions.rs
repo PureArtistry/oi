@@ -3,7 +3,7 @@ use std::{env, fs, io::Write, path::Path};
 use anyhow::{bail, Result};
 use chrono::prelude::Local;
 use glob::glob;
-use whoami::platform;
+use whoami::{platform, Platform};
 
 pub fn fetch(query: String, lang: String) -> Result<String, ureq::Error> {
     let x = ureq::get("https://google.com/search")
@@ -20,14 +20,14 @@ pub fn fetch(query: String, lang: String) -> Result<String, ureq::Error> {
 }
 
 pub fn cached_html() -> Result<String> {
-    let os_type = platform().to_string();
+    let os_type = platform();
     let files = get_file_list(os_type)?;
     let html = fs::read_to_string(&files[(files.len() - 1)])?;
     Ok(html)
 }
 
 pub fn save_html(query: &[&str], html: &str) -> Result<String> {
-    let os_type = platform().to_string();
+    let os_type = platform();
     let cache_path = get_cache_path(&os_type)?;
     let file_date = Local::now().format("%s").to_string();
     let file_query = query.join("_");
@@ -50,7 +50,7 @@ pub fn save_html(query: &[&str], html: &str) -> Result<String> {
 }
 
 pub fn clean_cache() -> Result<String> {
-    let os_type = platform().to_string();
+    let os_type = platform();
     let sep = sep_type(&os_type);
     let target = [&get_cache_path(&os_type)?, sep, "oi"].join("");
     fs::remove_dir_all(&target)?;
@@ -58,16 +58,16 @@ pub fn clean_cache() -> Result<String> {
 }
 
 // this isn't strictly necessary but the mix of slashes on Windows looks messy
-fn sep_type(os_type: &str) -> &str {
+fn sep_type(os_type: &Platform) -> &str {
     match os_type {
-        "Windows" => "\\",
+        Platform::Windows => "\\",
         _ => "/"
     }
 }
 
-fn get_cache_path(os_type: &str) -> Result<String> {
+fn get_cache_path(os_type: &Platform) -> Result<String> {
     let cache_path: String = match os_type {
-        "Bsd" | "Linux" => match env::var("XDG_CACHE_HOME") {
+        Platform::Bsd | Platform::Linux => match env::var("XDG_CACHE_HOME") {
             Ok(x) => x,
             Err(_) => {
                 let home_path = env::var("HOME")?;
@@ -75,18 +75,18 @@ fn get_cache_path(os_type: &str) -> Result<String> {
                 x.join("")
             }
         },
-        "MacOS" => {
+        Platform::MacOS => {
             let home_path = env::var("HOME")?;
             let x = [home_path, "/Library/Application Support".to_string()];
             x.join("")
         }
-        "Windows" => env::var("LOCALAPPDATA")?,
-        &_ => bail!("This feature is not supported on your platform, sorry!")
+        Platform::Windows => env::var("LOCALAPPDATA")?,
+        _ => bail!("This feature is not supported on your platform, sorry!")
     };
     Ok(cache_path)
 }
 
-fn get_file_list(os_type: String) -> Result<Vec<String>> {
+fn get_file_list(os_type: Platform) -> Result<Vec<String>> {
     let sep = sep_type(&os_type);
     let cache_path = [&get_cache_path(&os_type)?, sep, "oi", sep, "*.html"].join("");
 
