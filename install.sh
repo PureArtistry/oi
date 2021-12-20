@@ -14,11 +14,11 @@ BOLD='\x1b[1m'
 RESET='\x1b[0m'
 
 printf '\n%b' '\x1b[36m' && cat << 'EOF'
-      ▪  ▄▄ 
+      ▪  ▄▄
 ▪     ██ ██▌
  ▄█▀▄ ▐█·▐█·
-▐█▌.▐▌▐█▌.▀ 
- ▀█▄▀▪▀▀▀ ▀ 
+▐█▌.▐▌▐█▌.▀
+ ▀█▄▀▪▀▀▀ ▀
 
 EOF
 printf '%b' $RESET
@@ -45,7 +45,7 @@ fi
 
 cd "$(dirname "$0")"
 printf '%bSTEP 1:%b %bbuilding the binary%b (this may take a few minutes)\n\n' $GREEN $RESET $BOLD $RESET
-cargo build --release --frozen
+cargo build --release
 command -v strip >/dev/null 2>&1 && strip -s ./target/release/oi
 
 printf '\n%bSTEP 2:%b %bcopying files%b (elevated privileges are required)\n\n' $GREEN $RESET $BOLD $RESET
