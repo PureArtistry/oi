@@ -34,8 +34,9 @@ if ! command -v oi >/dev/null ; then
     exit 1
 fi
 
+printf "%balert!%b are you sure that you wish to remove oi from your system? [Y/n] " $YELLOW $RESET
 while true; do
-    read -p "%balert!%b are you sure that you wish to remove oi from your system? [n]" $YELLOW $RESET yn
+    read yn
     case $yn in
         [Yy]* ) break;;
         [Nn]* ) exit;;
