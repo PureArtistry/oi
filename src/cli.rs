@@ -122,9 +122,9 @@ pub fn build<'a>(selectors: &'a [&str]) -> App<'a> {
         )
 
         .arg(Arg::new("query")
-            .conflicts_with_all(&["cache", "clean", "completions", "list"])
+            .conflicts_with_all(&["cache", "clean", "list"])
             .help("Whaddya wanna know?")
-            .required_unless_present_any(&["cache", "clean", "completions", "list"])
+            .required_unless_present_any(&["cache", "clean", "list"])
             .multiple_values(true)
             .value_hint(clap::ValueHint::Other)
         )
