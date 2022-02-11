@@ -1,5 +1,5 @@
 #!/bin/bash
-echo $OSTYPE
+
 case "$OSTYPE" in
     "linux-gnu" | "linux-musl") linux=true ;;
     *) linux=false ;;
