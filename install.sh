@@ -1,6 +1,10 @@
-#!/bin/sh
+#!/bin/bash
 
-if [ "$OSTYPE" != 'linux-gnu' || 'linux-musl' ]; then
+case "$OSTYPE" in
+    "linux-gnu" | "linux-musl") linux=true ;;
+    *) linux=false ;;
+esac
+if ! $linux; then
     echo "This script is designed for linux only, sorry!"
     exit 1
 fi
