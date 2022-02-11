@@ -1,6 +1,6 @@
 #!/bin/sh
 
-if [ "$OSTYPE" != 'linux-gnu' ]; then
+if [ "$OSTYPE" != 'linux-gnu' || 'linux-musl' ]; then
     echo "This uninstall script is designed for linux only, sorry!"
     exit 1
 fi
