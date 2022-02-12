@@ -1,29 +1,29 @@
 #!/bin/sh
 
-if [ "$OSTYPE" != 'linux-gnu' ]; then
+if [ $(uname) != 'Linux' ]; then
     echo "This script is designed for linux only, sorry!"
     exit 1
 fi
 
 set -e
 
-RED='\x1b[1;31m'
-GREEN='\x1b[1;32m'
-YELLOW='\x1b[1;33m'
-BOLD='\x1b[1m'
-RESET='\x1b[0m'
+RED='[1;31m'
+GREEN='[1;32m'
+YELLOW='[1;33m'
+CYAN='[1;36m'
+BOLD='[1m'
+RESET='[0m'
 
-printf '\n%b' '\x1b[36m' && cat << 'EOF'
+printf '\n%b' $CYAN && cat << 'EOF'
       ▪  ▄▄
 ▪     ██ ██▌
  ▄█▀▄ ▐█·▐█·
 ▐█▌.▐▌▐█▌.▀
  ▀█▄▀▪▀▀▀ ▀
-
 EOF
 printf '%b' $RESET
 
-if [ $EUID = 0 ]; then
+if [ $(id -u) = 0 ]; then
     printf "%bwarning:%b please don't run random scripts you find on the internet as root!\n" $YELLOW $RESET
     printf '%bsudo or doas will be used when elevated privileges are required%b\n' $BOLD $RESET
     exit 1
