@@ -1,32 +1,29 @@
-#!/bin/bash
+#!/bin/sh
 
-case "$OSTYPE" in
-    "linux-gnu" | "linux-musl") linux=true ;;
-    *) linux=false ;;
-esac
-if ! $linux; then
-    echo "This script is designed for linux only, sorry!"
+if [ $(uname) != 'Linux' ]; then
+    echo "This uninstall script is designed for linux only, sorry!"
     exit 1
 fi
 
 set -e
 
-RED='\x1b[1;31m'
-GREEN='\x1b[1;32m'
-YELLOW='\x1b[1;33m'
-BOLD='\x1b[1m'
-RESET='\x1b[0m'
+RED='[1;31m'
+GREEN='[1;32m'
+YELLOW='[1;33m'
+CYAN='[1;36m'
+BOLD='[1m'
+RESET='[0m'
 
-printf '\n%b' '\x1b[36m' && cat << 'EOF'
+printf '\n%b' $CYAN && cat << 'EOF'
       ▪  ▄▄
 ▪     ██ ██▌
  ▄█▀▄ ▐█·▐█·
 ▐█▌.▐▌▐█▌.▀
  ▀█▄▀▪▀▀▀ ▀
 EOF
-printf '%b\n' $RESET
+printf '%b' $RESET
 
-if [ $EUID = 0 ]; then
+if [ $(id -u) = 0 ]; then
     printf "%bwarning:%b please don't run random scripts you find on the internet as root!\n" $YELLOW $RESET
     printf '%bsudo or doas will be used when elevated privileges are required%b\n' $BOLD $RESET
     exit 1
@@ -34,7 +31,7 @@ fi
 
 # check if oi is not in path
 if ! command -v oi >/dev/null ; then
-    printf '%berror:%b can not find %boi%b in your $PATH, are you sure that it is installed\n' $RED $RESET $BOLD $RESET
+    printf '%berror:%b can not find %boi%b in your $PATH, are you sure that it is installed?\n' $RED $RESET $BOLD $RESET
     exit 1
 fi
 
@@ -68,5 +65,5 @@ $PRIV_ESC rm -v /usr/share/fish/vendor_completions.d/oi.fish
 if [ ! -f $LOC ]; then
     printf '\n%bDONE:%b done removing files!\n' $GREEN $RESET
 else
-    printf '\n%bERROR:%b could not remove the executable at $LOC, you may remove it manually\n' $RED $RESET
+    printf '\n%bERROR:%b could not remove the executable at $LOC, you may need to remove it manually\n' $RED $RESET
 fi
