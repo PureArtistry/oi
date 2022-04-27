@@ -16,7 +16,7 @@ pub fn tty(data: &scraper::Html, length_max: usize) {
         .unwrap();
 
     let word = define
-        .select(&Selector::parse("div.c8d6zd.ya2TWb.DgZBFd").unwrap())
+        .select(&Selector::parse("div.c8d6zd.xWMiCc.REww7c").unwrap())
         .next()
         .unwrap()
         .text()
@@ -238,7 +238,7 @@ pub fn raw(data: &scraper::Html) {
         .unwrap();
 
     let word = define
-        .select(&Selector::parse("div.c8d6zd.ya2TWb.DgZBFd").unwrap())
+        .select(&Selector::parse("div.c8d6zd.xWMiCc.REww7c").unwrap())
         .next()
         .unwrap()
         .text()
