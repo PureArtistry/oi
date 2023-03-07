@@ -3,7 +3,9 @@ use std::{env, fs, io::Write, path::Path};
 use anyhow::{bail, Result};
 use chrono::prelude::Local;
 use glob::glob;
-use whoami::{platform, Platform};
+
+/// SeParator -  Only here to handle windows properly
+const SP: &str = if cfg!(windows) { "\\" } else { "/" };
 
 pub fn fetch(query: String, lang: String) -> Result<String, ureq::Error> {
     let x = ureq::get("https://google.com/search")
@@ -20,24 +22,21 @@ pub fn fetch(query: String, lang: String) -> Result<String, ureq::Error> {
 }
 
 pub fn cached_html() -> Result<String> {
-    let os_type = platform();
-    let files = get_file_list(os_type)?;
+    let files = get_file_list()?;
     let html = fs::read_to_string(&files[(files.len() - 1)])?;
     Ok(html)
 }
 
 pub fn save_html(query: &[&str], html: &str) -> Result<String> {
-    let os_type = platform();
-    let cache_path = get_cache_path(&os_type)?;
+    let cache_path = get_cache_path()?;
     let file_date = Local::now().format("%s").to_string();
     let file_query = query.join("_");
-    let sep = sep_type(&os_type);
 
-    let mut x: Vec<&str> = vec![&cache_path, sep, "oi"];
+    let mut x: Vec<&str> = vec![&cache_path, SP, "oi"];
     if !Path::new(&x.join("")).is_dir() {
         fs::create_dir(&x.join(""))?
     }
-    x.push(sep);
+    x.push(SP);
     x.push(&file_date);
     x.push("-");
     x.push(&file_query);
@@ -50,45 +49,27 @@ pub fn save_html(query: &[&str], html: &str) -> Result<String> {
 }
 
 pub fn clean_cache() -> Result<String> {
-    let os_type = platform();
-    let sep = sep_type(&os_type);
-    let target = [&get_cache_path(&os_type)?, sep, "oi"].join("");
+    let target = [&get_cache_path()?, SP, "oi"].join("");
     fs::remove_dir_all(&target)?;
     Ok(target)
 }
 
-// this isn't strictly necessary but the mix of slashes on Windows looks messy
-fn sep_type(os_type: &Platform) -> &str {
-    match os_type {
-        Platform::Windows => "\\",
-        _ => "/"
-    }
-}
-
-fn get_cache_path(os_type: &Platform) -> Result<String> {
-    let cache_path: String = match os_type {
-        Platform::Bsd | Platform::Linux => match env::var("XDG_CACHE_HOME") {
-            Ok(x) => x,
-            Err(_) => {
-                let home_path = env::var("HOME")?;
-                let x = [home_path, "/.cache".to_string()];
-                x.join("")
-            }
-        },
-        Platform::MacOS => {
-            let home_path = env::var("HOME")?;
-            let x = [home_path, "/Library/Application Support".to_string()];
-            x.join("")
-        }
-        Platform::Windows => env::var("LOCALAPPDATA")?,
-        _ => bail!("This feature is not supported on your platform, sorry!")
-    };
+fn get_cache_path() -> Result<String> {
+    let cache_path: String =
+        if cfg!(freebsd) || cfg!(linux) {
+            env::var("XDG_CACHE_HOME").unwrap_or(env::var("HOME")? + "/.cache")
+        } else if cfg!(macos) {
+            env::var("HOME")? + "/Library/Application Support"
+        } else if cfg!(windows) {
+            env::var("LOCALAPPDATA")?
+        } else {
+            bail!("This feature is not supported on your platform, sorry!")
+        };
     Ok(cache_path)
 }
 
-fn get_file_list(os_type: Platform) -> Result<Vec<String>> {
-    let sep = sep_type(&os_type);
-    let cache_path = [&get_cache_path(&os_type)?, sep, "oi", sep, "*.html"].join("");
+fn get_file_list() -> Result<Vec<String>> {
+    let cache_path = [&get_cache_path()?, SP, "oi", SP, "*.html"].join("");
 
     let mut files: Vec<String> = vec![];
     for x in glob(&cache_path).unwrap() {
