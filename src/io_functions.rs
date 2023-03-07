@@ -5,7 +5,7 @@ use chrono::prelude::Local;
 use glob::glob;
 
 /// SeParator -  Only here to handle windows properly
-const SP: &str = if cfg!(windows) { "\\" } else { "/" };
+const SP: &str = if cfg!(target_os = "windows") { "\\" } else { "/" };
 
 pub fn fetch(query: String, lang: String) -> Result<String, ureq::Error> {
     let x = ureq::get("https://google.com/search")
