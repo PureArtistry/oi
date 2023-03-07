@@ -56,11 +56,11 @@ pub fn clean_cache() -> Result<String> {
 
 fn get_cache_path() -> Result<String> {
     let cache_path: String =
-        if cfg!(freebsd) || cfg!(linux) {
+        if cfg!(target_os = "freebsd") || cfg!(target_os = "linux") {
             env::var("XDG_CACHE_HOME").unwrap_or(env::var("HOME")? + "/.cache")
-        } else if cfg!(macos) {
+        } else if cfg!(target_os = "macos") {
             env::var("HOME")? + "/Library/Application Support"
-        } else if cfg!(windows) {
+        } else if cfg!(target_os = "windows") {
             env::var("LOCALAPPDATA")?
         } else {
             bail!("This feature is not supported on your platform, sorry!")
