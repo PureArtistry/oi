@@ -1,1 +1,5 @@
 /target
+result
+result-*
+*.tmp
+.direnv/
