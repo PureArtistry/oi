@@ -13,18 +13,18 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            artifact_name: rudo
+            artifact_name: oi
             target: x86_64-unknown-linux-gnu
-            asset_name: rudo-$tag-x86_64-unknown-linux-gnu
+            asset_name: oi-$tag-x86_64-unknown-linux-gnu
           - os: macos-latest
-            artifact_name: rudo
+            artifact_name: oi 
             target: x86_64-apple-darwin
-            asset_name: rudo-$tag-x86_64-apple-darwin
+            asset_name: oi-$tag-x86_64-apple-darwin
 
     steps:
     - uses: actions/checkout@v2
     - name: Build
-      run: cargo build --release --locked --target=${{ matrix.target }} && cd target/${{ matrix.target }}/release && tar -czvf ${{ matrix.artifact_name }}.tar.gz rudo
+      run: cargo build --release --locked --target=${{ matrix.target }} && cd target/${{ matrix.target }}/release && tar -czvf ${{ matrix.artifact_name }}.tar.gz oi 
     - name: Upload binaries to release
       uses: svenstaro/upload-release-action@v2
       with:
