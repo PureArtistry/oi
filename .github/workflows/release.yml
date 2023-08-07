@@ -1,34 +1,27 @@
-name: Release
+# .github/workflows/build.yml
+name: Build
 
 on:
   push:
-    tags:
-      - '*'
+    branches: [main]
 
 jobs:
-  publish:
-    name: Release for ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        include:
-          - os: ubuntu-latest
-            artifact_name: oi
-            target: x86_64-unknown-linux-gnu
-            asset_name: oi-$tag-x86_64-unknown-linux-gnu
-          - os: macos-latest
-            artifact_name: oi 
-            target: x86_64-apple-darwin
-            asset_name: oi-$tag-x86_64-apple-darwin
-
+  build:
+    name: Build
+    runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - name: Build
-      run: cargo build --release --locked --target=${{ matrix.target }} && cd target/${{ matrix.target }}/release && tar -czvf ${{ matrix.artifact_name }}.tar.gz oi 
-    - name: Upload binaries to release
-      uses: svenstaro/upload-release-action@v2
-      with:
-        repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: target/${{ matrix.target }}/release/${{ matrix.artifact_name }}.tar.gz
-        asset_name: ${{ matrix.asset_name }}.tar.gz
-        tag: ${{ github.ref }}
+      - uses: actions/checkout@master
+      - name: Compile
+        id: compile
+        uses: rust-build/rust-build.action@v1.4.3
+        with:
+          RUSTTARGET: x86_64-unknown-linux-musl
+          UPLOAD_MODE: none
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: Binary
+          path: |
+            ${{ steps.compile.outputs.BUILT_ARCHIVE }}
+            ${{ steps.compile.outputs.BUILT_CHECKSUM }}
+
