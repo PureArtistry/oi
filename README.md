@@ -47,8 +47,12 @@ following [this](https://medium.com/@kevinmarkvi/how-to-add-executables-to-your-
 
 a PowerShell completion script is located at the following path ```.\etc\completions\_oi.ps1``` but I currently have no idea where to put it (sorry!)
 
-##### I'll be providing pre compiled binaries for Linux, Windows & macOS in the releases section soon
+##### I'll be providing pre-compiled binaries for Linux, Windows & macOS in the releases section soon
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ >> sadly he couldn't. The repo is currently inactive and is not accepting any pull requests. But I really love this project and would like to maintain it fo myself and the wonderful people who like their scoop right on their terminal.
 
+If you're interested in participating and helping me resurrect Oi, please help me tidy up the documentation. I'll try to set up the binary builds as soon as I can. feel free to update that if you feel comfortable anyway.
+
+Let's start with these todos maybe? And I'll keep adding things to do. 
 ### TODO:
 
 - [x] shell completion scripts
