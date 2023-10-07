@@ -22,7 +22,7 @@ pub fn fetch(query: String, lang: String) -> Result<String, ureq::Error> {
 pub fn cached_html() -> Result<String> {
     let os_type = platform();
     let files = get_file_list(os_type)?;
-    let html = fs::read_to_string(&files[(files.len() - 1)])?;
+    let html = fs::read_to_string(&files[files.len() - 1])?;
     Ok(html)
 }
 

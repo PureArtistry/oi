@@ -160,7 +160,7 @@ fn main() {
     }
 
     let mut corrected = false;
-    if answers[(total - 1)] == "corrections" {
+    if answers[total - 1] == "corrections" {
         corrected = true;
         if !quiet {
             corrections(&data)
