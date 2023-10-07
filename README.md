@@ -56,8 +56,8 @@ Let's start with these todos maybe? And I'll keep adding things to do.
 ### TODO:
 
 - [x] shell completion scripts
-- [ ] add a proper release with binaries
-- [ ] license?
+- [x] add a proper release with binaries
+- [x] license?
 - [ ] improve docs
 - [ ] user customisable colours (using an environment variable)
 - [ ] general code improvements (and probable bug fixes)
