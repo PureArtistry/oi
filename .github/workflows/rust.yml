@@ -32,13 +32,13 @@ jobs:
       uses: rust-build/rust-build.action@v1.4.3
       with:
         RUSTTARGET: x86_64-unknown-linux-musl  # Use x86_64-unknown-linux-musl for statically linked binaries
-        EXTRA_FILES: ''  # List any extra files to include (optional)
-        SRC_DIR: ''  # Path to directory containing Cargo.toml (optional, defaults to project root)
         ARCHIVE_TYPES: 'zip'  # List of archive types to publish the binaries with (optional)
         ARCHIVE_NAME: 'oi'  # Full name of archive to upload (optional, specify file extension)
-        PRE_BUILD: ''  # Relative path of script to run before building (optional)
-        POST_BUILD: ''  # Relative path of script to run after building (optional)
-        MINIFY: 'false'  # If set to "true", the resulting binary will be stripped and compressed by UPX
-        TOOLCHAIN_VERSION: 'stable'  # The Rust toolchain version to use (optional)
-        UPLOAD_MODE: 'release'  # What method to use to upload compiled binaries (release or none)
+        UPLOAD_MODE: 'release'  # Specify 'release' to upload the release binary
+
+    - name: Upload Release Binary
+      run: |
+        curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          --data-binary "@oi.zip" \
+          -X POST "https://uploads.github.com/repos/tellmeY18/oi/releases/$(curl -H 'Authorization: token ${{ secrets.GITHUB_TOKEN }}' -H 'Accept: application/vnd.github.v3+json' https://api.github.com/repos/tellmeY18/oi/releases/tags/${{ github.ref }} | jq -r .id )/assets?name=oi.zip"
 
