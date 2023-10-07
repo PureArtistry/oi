@@ -31,7 +31,7 @@ jobs:
     - name: Rust Release binary
       uses: rust-build/rust-build.action@v1.4.3
       with:
-        RUSTTARGET: x86_64-unknown-linux-gnu  # Set your target platform
+        RUSTTARGET: x86_64-unknown-linux-musl  # Use x86_64-unknown-linux-musl for statically linked binaries
         EXTRA_FILES: ''  # List any extra files to include (optional)
         SRC_DIR: ''  # Path to directory containing Cargo.toml (optional, defaults to project root)
         ARCHIVE_TYPES: 'zip'  # List of archive types to publish the binaries with (optional)
