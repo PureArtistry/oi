@@ -5,8 +5,8 @@ pub fn build<'a>(selectors: &'a [&str]) -> App<'a> {
         .author("David Sherriff <d.sherriff.81@gmail.com>")
         .about("please use --help for more detailed information")
         .long_about("trivia on the command line.")
-        .version("0.2.0")
-        .help_template("{bin}\n{about}\n\n{usage-heading}\n    {usage}\n\n{all-args}\n\nversion {version} by {author}\nplease report any bugs to https://github.com/PureArtistry/oi/issues")
+        .version("0.2.1")
+        .help_template("{bin}\n{about}\n\n{usage-heading}\n    {usage}\n\n{all-args}\n\nversion {version} by {author}\nplease report any bugs to https://github.com/tellmeY18/oi/issues")
 
         .arg(Arg::new("all")
             .short('a')
