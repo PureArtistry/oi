@@ -4,6 +4,7 @@ version = "0.2.1"
 authors = ["Vysakh Premkumar <vysakhpr218@gmail.com>"]
 edition = "2021"
 description = "trivia on the command line."
+license = "GPL-3.0"  
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [[bin]]
