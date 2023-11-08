@@ -60,5 +60,5 @@ a PowerShell completion script is located at the following path ```.\etc\complet
 ### TO-DO List @tellmeY18
 - [ ] package it for cargo
 - [ ] package for debian
-- [ ] add to AUR
+- [x] add to AUR
 - [ ] package for Arch mebbe ?
