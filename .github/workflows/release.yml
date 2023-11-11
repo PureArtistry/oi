@@ -1,0 +1,53 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+"
+
+jobs:
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    outputs:
+      release_version: ${{ steps.set_version.outputs.version }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Set Release Version
+        id: set_version
+        run: echo "::set-output name=version::$(date +'%Y.%m.%d.%H%M%S')"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create ${{ steps.set_version.outputs.version }}
+
+  build-release:
+    name: Build and Release Binary
+    needs: ['create-release']
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Build Release Binary
+        run: cargo build --release
+
+      - name: Create Release Archive
+        run: |
+          cp target/release/oi oi
+          tar czf oi.tar.gz oi
+        working-directory: ${{ github.workspace }}
+
+      - name: Upload Release Archive
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload ${{ needs.create-release.outputs.release_version }} oi.tar.gz --clobber

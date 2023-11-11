@@ -9,7 +9,7 @@ pub fn main(data: &scraper::Html, tty: &bool, w: usize) {
     let dups_len = duplicate_lines.len();
     let mut lyrics_index = lyrics
         .iter()
-        .position(|&r| r == duplicate_lines[(dups_len - 1)])
+        .position(|&r| r == duplicate_lines[dups_len - 1])
         .unwrap();
     for _ in 0..dups_len {
         lyrics.remove(lyrics_index);

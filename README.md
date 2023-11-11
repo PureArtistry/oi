@@ -5,7 +5,6 @@
 ▐█▌.▐▌▐█▌.▀ 
  ▀█▄▀▪▀▀▀ ▀  - trivia on the command line
 ```
-#### Documentation is my...
 
 ![define_ah](https://user-images.githubusercontent.com/53883649/146692265-ec042204-7cbd-4918-89fa-10d47d1bf621.jpg)
 
@@ -47,13 +46,19 @@ following [this](https://medium.com/@kevinmarkvi/how-to-add-executables-to-your-
 
 a PowerShell completion script is located at the following path ```.\etc\completions\_oi.ps1``` but I currently have no idea where to put it (sorry!)
 
-##### I'll be providing pre compiled binaries for Linux, Windows & macOS in the releases section soon
+### Pre-Compiled version for Linux is available in the Release section. You may download that and run it using ./oi or move it to your $PATH
 
 ### TODO:
 
 - [x] shell completion scripts
-- [ ] add a proper release with binaries
-- [ ] license?
+- [x] add a proper release with binaries
+- [x] license?
 - [ ] improve docs
 - [ ] user customisable colours (using an environment variable)
 - [ ] general code improvements (and probable bug fixes)
+
+### TO-DO List @tellmeY18
+- [ ] package it for cargo
+- [ ] package for debian
+- [x] add to AUR
+- [ ] package for Arch mebbe ?

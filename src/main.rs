@@ -160,7 +160,7 @@ fn main() {
     }
 
     let mut corrected = false;
-    if answers[(total - 1)] == "corrections" {
+    if answers[total - 1] == "corrections" {
         corrected = true;
         if !quiet {
             corrections(&data)
@@ -249,54 +249,39 @@ fn corrections(data: &scraper::Html) {
 }
 
 fn print_urls(w: usize, data: scraper::Html) {
-    match data
-        .select(&Selector::parse(selectors::name_to_id("url_block")).unwrap())
-        .next()
-        .is_some()
-    {
-        true => {
-            for x in data.select(&Selector::parse(selectors::name_to_id("url_block")).unwrap()) {
-                let title = x
-                    .select(&Selector::parse(selectors::name_to_id("title")).unwrap())
-                    .next()
-                    .unwrap()
-                    .text()
-                    .collect::<Vec<&str>>();
+    let selector = Selector::parse(selectors::name_to_id("url_block")).unwrap();
+    let mut url_blocks = data.select(&selector);
 
-                let url = x
-                    .select(&Selector::parse(selectors::name_to_id("url")).unwrap())
-                    .next()
-                    .unwrap()
-                    .first_child()
-                    .unwrap()
-                    .value()
-                    .as_element()
-                    .unwrap()
-                    .attr("href")
-                    .unwrap();
+    if url_blocks.next().is_some() {
+        for x in url_blocks {
+            let title_selector = Selector::parse(selectors::name_to_id("title")).unwrap();
+            let title = x.select(&title_selector).next().unwrap().text().collect::<Vec<&str>>();
 
-                let desc_check = x
-                    .select(&Selector::parse(selectors::name_to_id("desc")).unwrap())
-                    .next();
-                let description: String = match desc_check.is_some() {
-                    true => {
-                        let y = desc_check.unwrap().text().collect::<Vec<&str>>();
-                        y.join("")
-                    }
-                    false => "No description available, sorry!".to_string()
-                };
+            let url_selector = Selector::parse(selectors::name_to_id("url")).unwrap();
+            let url_element = x.select(&url_selector).next().unwrap();
+            let href = url_element
+                .first_child()
+                .and_then(|element| element.value().as_element())
+                .and_then(|element| element.attr("href"))
+                .unwrap_or("No URL available");
 
-                println!(
-                    "\n{}\n{}\n{}",
-                    title.join("").bold().blue(),
-                    url,
-                    format_desc(w, description).dark_grey()
-                )
-            }
+            let desc_selector = Selector::parse(selectors::name_to_id("desc")).unwrap();
+            let desc_check = x.select(&desc_selector).next();
+            let description = match desc_check {
+                Some(y) => y.text().collect::<Vec<&str>>().join(""),
+                None => "No description available, sorry!".to_string(),
+            };
+
+            println!(
+                "\n{}\n{}\n{}",
+                title.join("").bold().blue(),
+                href,
+                format_desc(w, description).dark_grey()
+            );
         }
-        false => println!("{}", "jk, there are no links!".dark_grey())
+    } else {
+        println!("{}", "jk, there are no links!".dark_grey());
     }
-    exit(0)
 }
 
 fn format_desc(length_max: usize, desc: String) -> String {

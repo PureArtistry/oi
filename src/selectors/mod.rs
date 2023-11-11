@@ -255,7 +255,7 @@ pub fn filter(mut answers: Vec<&str>, mut query: String) -> Vec<&str> {
             "holidays" => {
                 if qv[0] == "holidays"
                     || qv[0] == "public" && qv[1] == "holidays"
-                    || qv[(n - 1)] == "public" && qv[n] == "holidays"
+                    || qv[n - 1] == "public" && qv[n] == "holidays"
                     || qv[n] == "holidays"
                 {
                     answers = vec!["holidays"];
